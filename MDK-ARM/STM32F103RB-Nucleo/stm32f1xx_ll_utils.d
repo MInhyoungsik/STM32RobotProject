@@ -1,0 +1,12 @@
+stm32f103rb-nucleo\stm32f1xx_ll_utils.o: ../../../../../../Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_ll_utils.c
+stm32f103rb-nucleo\stm32f1xx_ll_utils.o: ../../../../../../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_ll_rcc.h
+stm32f103rb-nucleo\stm32f1xx_ll_utils.o: ../../../../../../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h
+stm32f103rb-nucleo\stm32f1xx_ll_utils.o: ../../../../../../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f103xb.h
+stm32f103rb-nucleo\stm32f1xx_ll_utils.o: C:\Users\dpy91\AppData\Local\Arm\Packs\ARM\CMSIS\5.7.0\CMSIS\Core\Include\core_cm3.h
+stm32f103rb-nucleo\stm32f1xx_ll_utils.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+stm32f103rb-nucleo\stm32f1xx_ll_utils.o: C:\Users\dpy91\AppData\Local\Arm\Packs\ARM\CMSIS\5.7.0\CMSIS\Core\Include\cmsis_version.h
+stm32f103rb-nucleo\stm32f1xx_ll_utils.o: C:\Users\dpy91\AppData\Local\Arm\Packs\ARM\CMSIS\5.7.0\CMSIS\Core\Include\cmsis_compiler.h
+stm32f103rb-nucleo\stm32f1xx_ll_utils.o: C:\Users\dpy91\AppData\Local\Arm\Packs\ARM\CMSIS\5.7.0\CMSIS\Core\Include\cmsis_armcc.h
+stm32f103rb-nucleo\stm32f1xx_ll_utils.o: ../../../../../../Drivers/CMSIS/Device/ST/STM32F1xx/Include/system_stm32f1xx.h
+stm32f103rb-nucleo\stm32f1xx_ll_utils.o: ../../../../../../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_ll_utils.h
+stm32f103rb-nucleo\stm32f1xx_ll_utils.o: ../../../../../../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_ll_system.h
