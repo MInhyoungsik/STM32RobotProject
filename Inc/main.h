@@ -91,6 +91,7 @@ void UserButton_Callback(void);
 
 /* TIM2 interrupt processing */
 void TimerCaptureCompare_Callback(void);
+void TimerCaptureCompare_Callback2(void);
 
 
 

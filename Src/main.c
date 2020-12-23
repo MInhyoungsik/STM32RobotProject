@@ -35,19 +35,22 @@
 /* Private define ------------------------------------------------------------*/
 /* Number of output compare modes */
 #define TIM_DUTY_CYCLES_NB 3
+//#define TIM_DUTY_CYCLES_NB_2 3
 
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Duty cycles: D = T/P * 100%                                                */
 /* where T is the pulse duration and P  the period of the PWM signal           */
 //static uint32_t aDutyCycle[TIM_DUTY_CYCLES_NB] = {6,15,24};
-static uint32_t aDutyCycle[TIM_DUTY_CYCLES_NB] = {15,20,25};
+static uint32_t aDutyCycle[TIM_DUTY_CYCLES_NB] = {25,20,15};
+static uint32_t aDutyCycle2[TIM_DUTY_CYCLES_NB] = {25,20,15};
 
 /* Duty cycle index */
 static uint8_t iDutyCycle = 0;
 
 /* Measured duty cycle */
 __IO uint32_t uwMeasuredDutyCycle = 0;
+__IO uint32_t uwMeasuredDutyCycle2 = 0;
 
 /* TIM3 Clock */
 static uint32_t TimOutClock = 1;
@@ -55,6 +58,7 @@ static uint32_t TimOutClock = 1;
 /* Private function prototypes -----------------------------------------------*/
 __STATIC_INLINE void     SystemClock_Config(void);
 __STATIC_INLINE void     Configure_TIMPWMOutput(void);
+__STATIC_INLINE void     Configure_TIMPWMOutput2(void);
 __STATIC_INLINE void     Configure_DutyCycle(uint32_t OCMode);
 __STATIC_INLINE void     UserButton_Init(void);
 
@@ -80,11 +84,12 @@ int main(void)
   UserButton_Init();
   
   /* Configure the timer in output compare mode */
-  Configure_TIMPWMOutput();
+  Configure_TIMPWMOutput(); // TIM3
+	Configure_TIMPWMOutput2(); // TIM2
 	
 	
 	/* Configure USARTx (USART IP configuration and related GPIO initialization) */
-	//Configure_USART();
+	Configure_USART();
 	
 
   /* Infinite loop */
@@ -191,6 +196,108 @@ __STATIC_INLINE void  Configure_TIMPWMOutput(void)
 }
 
 
+
+
+// TIM2
+__STATIC_INLINE void  Configure_TIMPWMOutput2(void)
+{
+  /*************************/
+  /* GPIO AF configuration */
+  /*************************/
+  /* Enable the peripheral clock of GPIOs */
+  //LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_GPIOA);
+  
+	// 리맵(REMAP) to GPIOB4
+	//LL_GPIO_AF_RemapPartial_TIM2();
+	LL_GPIO_AF_DisableRemap_TIM2();	//
+	
+  /* GPIO TIM2_CH2 configuration */
+  LL_GPIO_SetPinMode(GPIOA, LL_GPIO_PIN_1, LL_GPIO_MODE_ALTERNATE);
+  LL_GPIO_SetPinPull(GPIOA, LL_GPIO_PIN_1, LL_GPIO_PULL_DOWN);
+  LL_GPIO_SetPinSpeed(GPIOA, LL_GPIO_PIN_1, LL_GPIO_SPEED_FREQ_HIGH);	//50MHz 
+  
+  /***********************************************/
+  /* Configure the NVIC to handle TIM2 interrupt */
+  /***********************************************/
+  NVIC_SetPriority(TIM2_IRQn, 0);
+  NVIC_EnableIRQ(TIM2_IRQn);
+  
+  /******************************/
+  /* Peripheral clocks enabling */
+  /******************************/
+  /* Enable the timer peripheral clock */
+  LL_APB1_GRP1_EnableClock(LL_APB1_GRP1_PERIPH_TIM2); 
+  
+  /***************************/
+  /* Time base configuration */
+  /***************************/
+  /* Set counter mode */
+  /* Reset value is LL_TIM_COUNTERMODE_UP */
+  //LL_TIM_SetCounterMode(TIM3, LL_TIM_COUNTERMODE_UP);
+  
+  /* Set the pre-scaler value to have TIM2 counter clock equal to 10 kHz */
+  LL_TIM_SetPrescaler(TIM2, __LL_TIM_CALC_PSC(SystemCoreClock, 10000));
+  
+  /* Enable TIM3_ARR register preload. Writing to or reading from the         */
+  /* auto-reload register accesses the preload register. The content of the   */
+  /* preload register are transferred into the shadow register at each update */
+  /* event (UEV).                                                             */  
+  LL_TIM_EnableARRPreload(TIM2);
+  
+  /* Set the auto-reload value to have a counter frequency of 100 Hz */
+  /* TIM3CLK = SystemCoreClock / (APB prescaler & multiplier)               */
+  TimOutClock = SystemCoreClock/1;
+  LL_TIM_SetAutoReload(TIM2, __LL_TIM_CALC_ARR(TimOutClock, LL_TIM_GetPrescaler(TIM2), 100));
+  
+  /*********************************/
+  /* Output waveform configuration */
+  /*********************************/
+  /* Set output mode */
+  /* Reset value is LL_TIM_OCMODE_FROZEN */
+  LL_TIM_OC_SetMode(TIM2, LL_TIM_CHANNEL_CH2, LL_TIM_OCMODE_PWM1);
+  
+  /* Set output channel polarity */
+  /* Reset value is LL_TIM_OCPOLARITY_HIGH */
+  //LL_TIM_OC_SetPolarity(TIM3, LL_TIM_CHANNEL_CH1, LL_TIM_OCPOLARITY_HIGH);
+  
+  /* Set compare value to half of the counter period (50% duty cycle ) */
+  LL_TIM_OC_SetCompareCH1(TIM2, ( (LL_TIM_GetAutoReload(TIM2) + 1 ) / 2));
+  
+  /* Enable TIM3_CCR1 register preload. Read/Write operations access the      */
+  /* preload register. TIM3_CCR1 preload value is loaded in the active        */
+  /* at each update event.                                                    */
+  LL_TIM_OC_EnablePreload(TIM2, LL_TIM_CHANNEL_CH2);
+  
+  /**************************/
+  /* TIM3 interrupts set-up */
+  /**************************/
+  /* Enable the capture/compare interrupt for channel 1*/
+  LL_TIM_EnableIT_CC1(TIM2);
+  
+  /**********************************/
+  /* Start output signal generation */
+  /**********************************/
+  /* Enable output channel 1 */
+  LL_TIM_CC_EnableChannel(TIM2, LL_TIM_CHANNEL_CH2);
+  
+  /* Enable counter */
+  LL_TIM_EnableCounter(TIM2);
+  
+  /* Force update generation */
+  LL_TIM_GenerateEvent_UPDATE(TIM2);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 /**
   * @brief  Changes the duty cycle of the PWM signal.
   *         D = (T/P)*100
@@ -210,6 +317,19 @@ __STATIC_INLINE void Configure_DutyCycle(uint32_t D)
   /* Its value is calculated in order to match the requested duty cycle.      */
   P = (D*T)/100;
   LL_TIM_OC_SetCompareCH1(TIM3, P);
+}
+__STATIC_INLINE void Configure_DutyCycle2(uint32_t D)
+{
+  uint32_t P;    /* Pulse duration */
+  uint32_t T;    /* PWM signal period */
+  
+  /* PWM signal period is determined by the value of the auto-reload register */
+  T = LL_TIM_GetAutoReload(TIM2) + 1;
+  
+  /* Pulse duration is determined by the value of the compare register.       */
+  /* Its value is calculated in order to match the requested duty cycle.      */
+  P = (D*T)/100;
+  LL_TIM_OC_SetCompareCH2(TIM2, P);
 }
 
 
@@ -406,7 +526,10 @@ void TimerCaptureCompare_Callback(void)
 {
   uwMeasuredDutyCycle = (LL_TIM_OC_GetCompareCH1(TIM3) * 100) / ( LL_TIM_GetAutoReload(TIM3) + 1 );
 }
-
+void TimerCaptureCompare_Callback2(void)
+{
+  uwMeasuredDutyCycle2 = (LL_TIM_OC_GetCompareCH2(TIM2) * 100) / ( LL_TIM_GetAutoReload(TIM2) + 1 );
+}
 
 
 
@@ -422,15 +545,30 @@ __IO uint32_t received_char;
   received_char = LL_USART_ReceiveData8(USARTx_INSTANCE);
 
   /* Check if received value is corresponding to specific one : S or s */
-  if ((received_char == 'S') || (received_char == 's'))
-  {
-    /* Turn LED2 On : Expected character has been received */
-    //LED_On();
-  }
+//  if ((received_char == 'q') || (received_char == 's'))
+//  {
+//		iDutyCycle = (iDutyCycle + 1) % TIM_DUTY_CYCLES_NB;
+
+		/* Change PWM signal duty cycle */
+//		Configure_DutyCycle(aDutyCycle[iDutyCycle]);
+		
+		switch(received_char){
+			case 'q' : {Configure_DutyCycle(aDutyCycle[0]); break;}
+			case 'w' : {Configure_DutyCycle(aDutyCycle[1]); break;}
+			case 'e' : {Configure_DutyCycle(aDutyCycle[2]); break;}
+			case 'a' : {Configure_DutyCycle2(aDutyCycle2[0]); break;}
+			case 's' : {Configure_DutyCycle2(aDutyCycle2[1]); break;}
+			case 'd' : {Configure_DutyCycle2(aDutyCycle2[2]); break;}
+			}
+//  }
 
   /* Echo received character on TX */
   LL_USART_TransmitData8(USARTx_INSTANCE, received_char);
 }
+
+
+
+
 void Error_Callback(void)
 {
   __IO uint32_t sr_reg;

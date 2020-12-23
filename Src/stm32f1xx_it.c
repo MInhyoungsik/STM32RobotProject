@@ -163,6 +163,18 @@ void TIM3_IRQHandler(void)
     TimerCaptureCompare_Callback();
   }
 }
+void TIM2_IRQHandler(void)
+{
+  /* Check whether CC1 interrupt is pending */
+  if(LL_TIM_IsActiveFlag_CC1(TIM2) == 1)
+  {
+    /* Clear the update interrupt flag*/
+    LL_TIM_ClearFlag_CC1(TIM2);
+
+    /* TIM2 capture/compare interrupt processing(function defined in main.c) */
+    TimerCaptureCompare_Callback2();
+  }
+}
 /**
   * @brief  This function handles external lines 10 to 15 interrupt request.
   * @param  None
